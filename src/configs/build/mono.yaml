@@ -1,0 +1,58 @@
+extends: "base.yaml"
+
+# Metrics — global, language-agnostic
+metrics:
+  em_ascent:     1792
+  em_descent:     512
+  win_ascent:    1792
+  win_descent:    512
+  typo_line_gap:    0
+
+# Grid slot sizes — language-agnostic
+width:
+  half_width: 1024
+  full_width: 2048
+  threshold:  1536
+
+# Per-language settings: shape, source files, and scale.
+# Extended build configs (mono-c, absolute-mono, …) only override what changes.
+languages:
+  english:
+    vertical_shift:    192
+    preserve_position: true
+    source_files:
+      regular:     "MesloLGM-Regular.ttf"
+      bold:        "MesloLGM-Bold.ttf"
+      italic:      "MesloLGM-Italic.ttf"
+      bold_italic: "MesloLGM-BoldItalic.ttf"
+    scale:
+      half_width_x: 0.78
+      half_width_y: 0.86
+      full_width_x: 0.99
+      full_width_y: 0.96
+
+  korean:
+    vertical_shift: 28
+    source_files:
+      regular:     "SarasaFixedK-Regular.ttf"
+      bold:        "SarasaFixedK-Bold.ttf"
+      italic:      "SarasaFixedK-Italic.ttf"
+      bold_italic: "SarasaFixedK-BoldItalic.ttf"
+    scale:
+      half_width_x: 0.78
+      half_width_y: 0.86
+      full_width_x: 0.99
+      full_width_y: 0.96
+
+  japanese:
+    vertical_shift: 44
+    source_files:
+      regular:     "SarasaFixedJ-Regular.ttf"
+      bold:        "SarasaFixedJ-Bold.ttf"
+      italic:      "SarasaFixedJ-Italic.ttf"
+      bold_italic: "SarasaFixedJ-BoldItalic.ttf"
+    scale:
+      half_width_x: 0.78
+      half_width_y: 0.86
+      full_width_x: 0.99
+      full_width_y: 0.96

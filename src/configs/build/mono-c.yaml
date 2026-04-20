@@ -1,0 +1,24 @@
+extends: "mono.yaml"
+
+# Condensed grid: half-width glyphs are narrower (870 vs 1024)
+width:
+  half_width: 870
+  full_width: 1740
+  threshold:  1305
+
+# Scale overrides for the condensed grid — only changed values
+languages:
+  english:
+    scale:
+      half_width_x: 0.66
+      full_width_x: 0.84
+
+  korean:
+    scale:
+      half_width_x: 0.66
+      full_width_x: 0.84
+
+  japanese:
+    scale:
+      half_width_x: 0.66
+      full_width_x: 0.84

@@ -1,0 +1,16 @@
+# All paths relative to the project root (parent of src/).
+# process.py derives _SRC_DIR from __file__ and loads this file; everything else comes from here.
+# Changing a directory only requires editing this file — no Python changes needed.
+
+source_fonts:     "src/resources/source_fonts"
+templates:        "src/ff/service"
+output:           "output"
+logs:             "logs"
+temp:             "temp"
+backups:          "backups"
+profile_registry: "src/profiles/profile.yaml"
+
+config_dirs:
+  font:    "src/configs/font"
+  build:   "src/configs/build"
+  logging: "src/configs/logging"

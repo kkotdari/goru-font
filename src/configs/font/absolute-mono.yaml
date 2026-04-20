@@ -1,0 +1,6 @@
+extends: "mono.yaml"
+
+font:
+  family:       "Goru Absolute Mono"
+  family_short: "GoruAbsoluteMono"
+  unique_id:    "kkotdari: Goru Absolute Mono: 2026"

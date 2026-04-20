@@ -1,0 +1,7 @@
+extends: "mono.yaml"
+
+build:
+  styles: "regular"
+
+output:
+  save_temp_files: false

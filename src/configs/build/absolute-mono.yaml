@@ -1,0 +1,21 @@
+extends: "mono.yaml"
+
+# Absolute grid: full-width glyphs occupy the same width as half-width (non-CJK 2:1 ratio)
+width:
+  half_width: 1024
+  full_width: 1024
+  threshold:  1536
+
+# CJK glyphs must fit into a 1024-unit cell instead of 2048 — only full_width_x changes
+languages:
+  english:
+    scale:
+      full_width_x: 0.5
+
+  korean:
+    scale:
+      full_width_x: 0.5
+
+  japanese:
+    scale:
+      full_width_x: 0.5

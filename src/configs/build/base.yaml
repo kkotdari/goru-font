@@ -1,0 +1,83 @@
+# Base Build Configuration
+#
+# Defines language processing pipeline, character classification, and build flags.
+# Does NOT include metrics, width, scale, source_files, or glyph shape settings —
+# those belong in profile-specific build configs (mono.yaml, absolute-mono.yaml, etc.)
+# that extend this file.
+#
+# Adding a new language: add an entry under `languages` and a pe.j2 template. No Python changes.
+
+# Build settings
+build:
+  styles: "all"   # "all" | "regular" | "bold" | "italic" | "bold_italic" | list
+  skip_hinting:          false
+  skip_kerning_removal:  false
+  skip_overlap_removal:  false
+
+languages:
+  english:
+    enabled:  true
+    template: "en_processing.pe.j2"
+    dir:      "english"
+    order:    1
+    timeout:  300
+
+  korean:
+    enabled:  true
+    template: "kr_processing.pe.j2"
+    dir:      "korean"
+    order:    2
+    timeout:  600
+    remove_overlaps:      true
+    remove_overlaps_with: ["english"]
+
+  japanese:
+    enabled:  true
+    template: "jp_processing.pe.j2"
+    dir:      "japanese"
+    order:    3
+    timeout:  600
+    remove_overlaps:      true
+    remove_overlaps_with: ["english", "korean"]
+
+  # chinese:
+  #   enabled:  false
+  #   template: "cn_processing.pe.j2"
+  #   dir:      "chinese"
+  #   order:    4
+  #   timeout:  600
+
+# Character classification
+special_chars:
+  no_center_ranges:
+    - [0x2500, 0x257F]   # Box Drawing
+    - [0x2580, 0x259F]   # Block Elements
+    - [0x25A0, 0x25FF]   # Geometric Shapes
+    - [0x2800, 0x28FF]   # Braille Patterns
+
+  no_scale_ranges:
+    - [0x2190, 0x21FF]   # Arrows
+    - [0x2200, 0x22FF]   # Mathematical Operators
+    - [0x2300, 0x23FF]   # Miscellaneous Technical
+    - [0x2500, 0x257F]   # Box Drawing
+    - [0x2580, 0x259F]   # Block Elements
+    - [0x25A0, 0x25FF]   # Geometric Shapes
+    - [0x2600, 0x26FF]   # Miscellaneous Symbols
+    - [0x2700, 0x27BF]   # Dingbats
+    - [0x2800, 0x28FF]   # Braille Patterns
+    - [0xE0A0, 0xE0D4]   # Powerline symbols
+
+  halfwidth_ranges:
+    - [0x0020, 0x007E]   # Basic ASCII
+    - [0xFF61, 0xFF9F]   # Halfwidth Katakana
+    - [0xFFA0, 0xFFDC]   # Halfwidth Hangul
+    - [0xFFE8, 0xFFEE]   # Halfwidth forms
+
+  fullwidth_ranges:
+    - [0xFF01, 0xFF5E]   # Fullwidth ASCII variants
+    - [0xFFE0, 0xFFE6]   # Fullwidth symbols
+
+# Output settings
+output:
+  merge_template:  "final_merge.pe.j2"   # Jinja2 template for the final merge step
+  save_temp_files: false                  # if true, copies temp scripts to backups/ before cleanup

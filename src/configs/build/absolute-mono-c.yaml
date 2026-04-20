@@ -1,0 +1,23 @@
+extends: "absolute-mono.yaml"
+
+# Condensed absolute grid: both half and full slots share the same narrow width
+width:
+  half_width: 870
+  full_width: 870
+  threshold:  1305
+
+languages:
+  english:
+    scale:
+      half_width_x: 0.66
+      full_width_x: 0.42
+
+  korean:
+    scale:
+      half_width_x: 0.66
+      full_width_x: 0.42
+
+  japanese:
+    scale:
+      half_width_x: 0.66
+      full_width_x: 0.42

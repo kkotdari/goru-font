@@ -1,0 +1,345 @@
+#!/usr/bin/env fontforge
+# CJK Font Processing Script (Japanese)
+# Generated: {{ timestamp }}
+
+Print("FONTFORGE_START")
+
+MAX_UNICODE = 0x30000
+
+{% set style_map = {
+    'regular': [0],
+    'bold': [1],
+    'italic': [2],
+    'bold_italic': [3],
+    'all': [0, 1, 2, 3]
+} %}
+
+{% if build.styles is string %}
+    {% if build.styles in style_map %}
+        {% set style_indices = style_map[build.styles] %}
+    {% else %}
+        {% set style_indices = [0] %}
+    {% endif %}
+{% elif build.styles is sequence %}
+    {% set style_indices = [] %}
+    {% for style in build.styles %}
+        {% if style == 'regular' %}{% set _ = style_indices.append(0) %}{% endif %}
+        {% if style == 'bold' %}{% set _ = style_indices.append(1) %}{% endif %}
+        {% if style == 'italic' %}{% set _ = style_indices.append(2) %}{% endif %}
+        {% if style == 'bold_italic' %}{% set _ = style_indices.append(3) %}{% endif %}
+    {% endfor %}
+{% else %}
+    {% set style_indices = [0, 1, 2, 3] %}
+{% endif %}
+
+input_list = Array(4)
+input_list[0] = "{{ input_files[0] }}"
+input_list[1] = "{{ input_files[1] }}"
+input_list[2] = "{{ input_files[2] }}"
+input_list[3] = "{{ input_files[3] }}"
+
+output_list = Array(4)
+output_list[0] = "{{ output_sfds[0] }}"
+output_list[1] = "{{ output_sfds[1] }}"
+output_list[2] = "{{ output_sfds[2] }}"
+output_list[3] = "{{ output_sfds[3] }}"
+
+{% for ref_sfd_list in ref_sfds %}
+{% set ri = loop.index0 %}
+ref_{{ ri }}_files = Array(4)
+ref_{{ ri }}_files[0] = "{{ ref_sfd_list[0] }}"
+ref_{{ ri }}_files[1] = "{{ ref_sfd_list[1] }}"
+ref_{{ ri }}_files[2] = "{{ ref_sfd_list[2] }}"
+ref_{{ ri }}_files[3] = "{{ ref_sfd_list[3] }}"
+{% endfor %}
+
+style_names = Array(4)
+style_names[0] = "Regular"
+style_names[1] = "Bold"
+style_names[2] = "Italic"
+style_names[3] = "Bold Italic"
+
+half_width_val = {{ width.half_width }}
+full_width_val = {{ width.full_width }}
+half_scale_x = {{ lang.scale.half_width_x * 100 }}
+half_scale_y = {{ lang.scale.half_width_y * 100 }}
+full_scale_x = {{ lang.scale.full_width_x * 100 }}
+full_scale_y = {{ lang.scale.full_width_y * 100 }}
+vertical_shift = {{ lang.vertical_shift | default(0) }}
+threshold = {{ width.threshold }}
+
+styles_to_process = Array({{ style_indices|length }})
+{% for idx in style_indices %}
+styles_to_process[{{ loop.index0 }}] = {{ idx }}
+{% endfor %}
+
+j = 0
+while (j < SizeOf(styles_to_process))
+    i = styles_to_process[j]
+
+    Print("STYLE_START:" + style_names[i])
+
+    # Initialize reference glyph tracking
+    ref_has_glyph = Array(MAX_UNICODE)
+    k = 0
+    while (k < MAX_UNICODE)
+        ref_has_glyph[k] = 0
+        k = k + 1
+    endloop
+
+    # Scan all reference fonts (from remove_overlaps_with) to build exclusion set
+    {% for ref_sfd_list in ref_sfds %}
+    {% set ri = loop.index0 %}
+    Print("PHASE:Scanning reference font {{ ri }}")
+    ref_{{ ri }}_exists = FileAccess(ref_{{ ri }}_files[i])
+    if (ref_{{ ri }}_exists >= 0)
+        Open(ref_{{ ri }}_files[i])
+        SelectWorthOutputting()
+        foreach
+            code = GlyphInfo("Unicode")
+            if (code >= 0 && code < MAX_UNICODE)
+                ref_has_glyph[code] = 1
+            endif
+        endloop
+        Close()
+    else
+        Print("WARNING: Reference font not found, skipping dedup for this reference")
+    endif
+    {% endfor %}
+
+    Print("PHASE:Loading font")
+    Open(input_list[i])
+
+    Print("PHASE:Preparing glyphs")
+    SelectWorthOutputting()
+    UnlinkReference()
+
+    Print("PHASE:Scaling")
+    ScaleToEm({{ metrics.em_ascent }}, {{ metrics.em_descent }})
+
+    Print("PHASE:Counting glyphs before removal")
+    total_before = 0
+    SelectWorthOutputting()
+    foreach
+        total_before = total_before + 1
+    endloop
+    Print("GLYPH_COUNT_BEFORE:" + ToString(total_before))
+
+    {% if lang.remove_overlaps and not build.skip_overlap_removal %}
+    Print("PHASE:Removing overlaps with reference fonts")
+
+    to_remove_count = 0
+    SelectWorthOutputting()
+    foreach
+        code = GlyphInfo("Unicode")
+        if (code >= 0 && code < MAX_UNICODE)
+            if (ref_has_glyph[code] > 0)
+                to_remove_count = to_remove_count + 1
+            endif
+        endif
+    endloop
+    Print("TO_REMOVE:" + ToString(to_remove_count))
+
+    k = 0
+    removed_count = 0
+    while (k < MAX_UNICODE)
+        if (ref_has_glyph[k] > 0)
+            SelectNone()
+            Select(k)
+            if (WorthOutputting())
+                DetachGlyphs()
+                Clear()
+                removed_count = removed_count + 1
+            endif
+        endif
+        k = k + 1
+    endloop
+
+    Print("REMOVED_TOTAL:" + ToString(removed_count))
+
+    Print("PHASE:Re-selecting glyphs after removal")
+    SelectAll()
+    SelectWorthOutputting()
+    {% else %}
+    Print("PHASE:Skipping overlap removal")
+    {% endif %}
+
+    Print("PHASE:Counting glyphs after removal")
+    total_after = 0
+    SelectWorthOutputting()
+    foreach
+        total_after = total_after + 1
+    endloop
+    Print("GLYPH_COUNT_AFTER:" + ToString(total_after))
+    Print("ACTUALLY_REMOVED:" + ToString(total_before - total_after))
+
+    processed_glyphs = Array(MAX_UNICODE)
+    k = 0
+    while (k < MAX_UNICODE)
+        processed_glyphs[k] = 0
+        k = k + 1
+    endloop
+
+    Print("PHASE:Processing glyphs with character classification")
+    processed = 0
+    half_count = 0
+    full_count = 0
+    no_center_count = 0
+    duplicate_count = 0
+
+    SelectWorthOutputting()
+    foreach
+        code = GlyphInfo("Unicode")
+
+        if (code < 0 || code >= MAX_UNICODE)
+            Print("WARNING: Invalid Unicode code: " + ToString(code))
+            processed = processed + 1
+        elseif (processed_glyphs[code] == 1)
+            Print("DUPLICATE: U+" + ToString(code) + " already processed, skipping")
+            duplicate_count = duplicate_count + 1
+            processed = processed + 1
+        else
+            w = GlyphInfo("Width")
+
+            is_no_center = 0
+            is_halfwidth = 0
+            is_fullwidth = 0
+
+            {% if special_chars is defined and special_chars.no_center_ranges is defined %}
+            {% for range in special_chars.no_center_ranges %}
+            if (code >= 0u{{ '%04x' % range[0] }} && code <= 0u{{ '%04x' % range[1] }})
+                is_no_center = 1
+            endif
+            {% endfor %}
+            {% endif %}
+
+            {% if special_chars is defined and special_chars.halfwidth_ranges is defined %}
+            {% for range in special_chars.halfwidth_ranges %}
+            if (code >= 0u{{ '%04x' % range[0] }} && code <= 0u{{ '%04x' % range[1] }})
+                is_halfwidth = 1
+            endif
+            {% endfor %}
+            {% endif %}
+
+            {% if special_chars is defined and special_chars.fullwidth_ranges is defined %}
+            {% for range in special_chars.fullwidth_ranges %}
+            if (code >= 0u{{ '%04x' % range[0] }} && code <= 0u{{ '%04x' % range[1] }})
+                is_fullwidth = 1
+            endif
+            {% endfor %}
+            {% endif %}
+
+            if (is_no_center == 1)
+                if (w >= threshold)
+                    SetWidth(full_width_val)
+                else
+                    SetWidth(half_width_val)
+                endif
+                no_center_count = no_center_count + 1
+            elseif (is_fullwidth == 1)
+                Scale(full_scale_x, full_scale_y, 0, 0)
+                SetWidth(full_width_val)
+                CenterInWidth()
+                Move(0, vertical_shift)
+                full_count = full_count + 1
+            elseif (is_halfwidth == 1)
+                Scale(half_scale_x, half_scale_y, 0, 0)
+                SetWidth(half_width_val)
+                CenterInWidth()
+                Move(0, vertical_shift)
+                half_count = half_count + 1
+            else
+                # Most CJK characters are full-width; U+3000+ is the CJK block start
+                if (w >= threshold || code >= 0u3000)
+                    Scale(full_scale_x, full_scale_y, 0, 0)
+                    SetWidth(full_width_val)
+                    full_count = full_count + 1
+                else
+                    Scale(half_scale_x, half_scale_y, 0, 0)
+                    SetWidth(half_width_val)
+                    half_count = half_count + 1
+                endif
+                CenterInWidth()
+                Move(0, vertical_shift)
+            endif
+
+            processed_glyphs[code] = 1
+            processed = processed + 1
+        endif
+
+        {% set interval = logging.progress_interval | default(100) %}
+        if ((processed % {{ interval }}) == 0 || processed == total_after)
+            percent = (processed * 100) / total_after
+            Print("PROGRESS:" + ToString(percent) + ":" + ToString(processed) + ":" + ToString(total_after))
+        endif
+    endloop
+
+    if (processed > 0)
+        Print("PROGRESS:100:" + ToString(processed) + ":" + ToString(processed))
+    endif
+
+    Print("STATS:half=" + ToString(half_count) + ",full=" + ToString(full_count) + ",no_center=" + ToString(no_center_count))
+    if (duplicate_count > 0)
+        Print("DUPLICATES_SKIPPED:" + ToString(duplicate_count))
+    endif
+
+    {% if not build.skip_kerning_removal %}
+    Print("PHASE:Removing kerning")
+    lookups = GetLookups("GPOS")
+    if (SizeOf(lookups) > 0)
+        k = SizeOf(lookups) - 1
+        while (k >= 0)
+            RemoveLookup(lookups[k])
+            k = k - 1
+        endloop
+        Print("KERNING_REMOVED:" + ToString(SizeOf(lookups)))
+    endif
+    {% endif %}
+
+    Print("PHASE:Removing ligatures")
+    lookups = GetLookups("GSUB")
+    if (SizeOf(lookups) > 0)
+        k = SizeOf(lookups) - 1
+        while (k >= 0)
+            RemoveLookup(lookups[k])
+            k = k - 1
+        endloop
+        Print("  - Removed " + ToString(SizeOf(lookups)) + " GSUB lookups")
+    endif
+
+    Print("PHASE:Finalizing")
+    SelectWorthOutputting()
+    RoundToInt()
+
+    Print("PHASE:Verifying before save")
+    count_before_save = 0
+    SelectWorthOutputting()
+    foreach
+        count_before_save = count_before_save + 1
+    endloop
+    Print("COUNT_BEFORE_SAVE:" + ToString(count_before_save))
+
+    Print("PHASE:Saving")
+    Save(output_list[i])
+
+    Print("PHASE:Verifying saved file")
+    Open(output_list[i])
+    count_after_save = 0
+    SelectWorthOutputting()
+    foreach
+        count_after_save = count_after_save + 1
+    endloop
+    Print("COUNT_AFTER_SAVE:" + ToString(count_after_save))
+
+    if (count_after_save != count_before_save)
+        Print("ERROR: Glyph loss during save! Before: " + ToString(count_before_save) + ", After: " + ToString(count_after_save))
+    endif
+
+    Close()
+    Print("STYLE_END:" + style_names[i])
+
+    j = j + 1
+endloop
+
+Print("FONTFORGE_END")
+Quit(0)

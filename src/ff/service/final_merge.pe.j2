@@ -1,0 +1,228 @@
+#!/usr/bin/env fontforge
+# Final Merge and Generation Script
+# Generated: {{ timestamp }}
+#
+# sorted_langs[0] is the base font; remaining are merged in order.
+
+Print("FONTFORGE_START")
+
+fontfamily = "{{ font.family }}"
+fontfamily_short = "{{ font.family_short }}"
+
+{% set style_map = {
+    'regular': [0],
+    'bold': [1],
+    'italic': [2],
+    'bold_italic': [3],
+    'all': [0, 1, 2, 3]
+} %}
+
+{% if build.styles is string %}
+    {% if build.styles in style_map %}
+        {% set style_indices = style_map[build.styles] %}
+    {% else %}
+        {% set style_indices = [0] %}
+    {% endif %}
+{% elif build.styles is sequence %}
+    {% set style_indices = [] %}
+    {% for style in build.styles %}
+        {% if style == 'regular' %}{% set _ = style_indices.append(0) %}{% endif %}
+        {% if style == 'bold' %}{% set _ = style_indices.append(1) %}{% endif %}
+        {% if style == 'italic' %}{% set _ = style_indices.append(2) %}{% endif %}
+        {% if style == 'bold_italic' %}{% set _ = style_indices.append(3) %}{% endif %}
+    {% endfor %}
+{% else %}
+    {% set style_indices = [0, 1, 2, 3] %}
+{% endif %}
+
+styles = Array(4)
+styles[0] = "Regular"
+styles[1] = "Bold"
+styles[2] = "Italic"
+styles[3] = "Bold Italic"
+
+file_names = Array(4)
+file_names[0] = "Regular"
+file_names[1] = "Bold"
+file_names[2] = "Italic"
+file_names[3] = "BoldItalic"
+
+weights = Array(4)
+weights[0] = 400
+weights[1] = 700
+weights[2] = 400
+weights[3] = 700
+
+copyright = "{{ font.copyright }}"
+version = "{{ font.version }}"
+
+win_ascent = {{ metrics.win_ascent | int }}
+win_descent = {{ metrics.win_descent | int }}
+em_ascent = {{ metrics.em_ascent | int }}
+em_descent = {{ metrics.em_descent | int }}
+
+# SFD file arrays — base is sorted_langs[0], overlays are sorted_langs[1:]
+{% set base = sorted_langs[0] %}
+{% set overlays = sorted_langs[1:] %}
+
+base_files = Array(4)
+base_files[0] = "{{ base.sfd_paths[0] }}"
+base_files[1] = "{{ base.sfd_paths[1] }}"
+base_files[2] = "{{ base.sfd_paths[2] }}"
+base_files[3] = "{{ base.sfd_paths[3] }}"
+
+{% for overlay in overlays %}
+{% set oi = loop.index0 %}
+overlay_{{ oi }}_files = Array(4)
+overlay_{{ oi }}_files[0] = "{{ overlay.sfd_paths[0] }}"
+overlay_{{ oi }}_files[1] = "{{ overlay.sfd_paths[1] }}"
+overlay_{{ oi }}_files[2] = "{{ overlay.sfd_paths[2] }}"
+overlay_{{ oi }}_files[3] = "{{ overlay.sfd_paths[3] }}"
+{% endfor %}
+
+styles_to_process = Array({{ style_indices|length }})
+{% for idx in style_indices %}
+styles_to_process[{{ loop.index0 }}] = {{ idx }}
+{% endfor %}
+
+Print("Processing " + ToString(SizeOf(styles_to_process)) + " styles")
+
+j = 0
+while (j < SizeOf(styles_to_process))
+    i = styles_to_process[j]
+
+    Print("STYLE_START:" + styles[i])
+
+    Print("PHASE:Checking files")
+
+    # Base font is required
+    if (FileAccess(base_files[i]) < 0)
+        Print("ERROR: Base font not found: " + base_files[i])
+        j = j + 1
+        continue
+    endif
+    Print("  Base ({{ base.key }}): OK")
+
+    # Check overlays
+    {% for overlay in overlays %}
+    {% set oi = loop.index0 %}
+    overlay_{{ oi }}_exists = 0
+    if (FileAccess(overlay_{{ oi }}_files[i]) >= 0)
+        overlay_{{ oi }}_exists = 1
+        Print("  Overlay {{ oi }} ({{ overlay.key }}): OK")
+    else
+        Print("  Overlay {{ oi }} ({{ overlay.key }}): not found — will skip")
+    endif
+    {% endfor %}
+
+    # Load base font
+    Print("PHASE:Loading base ({{ base.key }})")
+    Open(base_files[i])
+
+    base_count = 0
+    SelectWorthOutputting()
+    foreach
+        base_count = base_count + 1
+    endloop
+    Print("Base glyphs: " + ToString(base_count))
+
+    # Merge overlays in order
+    {% for overlay in overlays %}
+    {% set oi = loop.index0 %}
+    if (overlay_{{ oi }}_exists == 1)
+        Print("PHASE:Merging {{ overlay.key }}")
+        MergeFonts(overlay_{{ oi }}_files[i])
+
+        merged_count = 0
+        SelectWorthOutputting()
+        foreach
+            merged_count = merged_count + 1
+        endloop
+        Print("After merging {{ overlay.key }}: " + ToString(merged_count) + " glyphs")
+    endif
+    {% endfor %}
+
+    # Set font names and metadata
+    SetFontNames(fontfamily_short + "-" + file_names[i], fontfamily, fontfamily + " " + styles[i], styles[i], copyright, version)
+
+    Print("PHASE:Setting font metadata")
+    full_name = fontfamily + " " + styles[i]
+    unique_id = "{{ font.unique_id | default('kkotdari: Goru: 2026') }}" + ":" + styles[i]
+
+    SetTTFName(0x409, 0, copyright)
+    SetTTFName(0x409, 1, fontfamily)
+    SetTTFName(0x409, 2, styles[i])
+    SetTTFName(0x409, 3, unique_id)
+    SetTTFName(0x409, 4, full_name)
+    SetTTFName(0x409, 5, "Version " + version)
+    SetTTFName(0x409, 6, fontfamily_short + "-" + styles[i])
+    SetTTFName(0x409, 7, "Goru is a trademark of kkotdari")
+    SetTTFName(0x409, 8, "{{ font.manufacturer | default('kkotdari') }}")
+    SetTTFName(0x409, 9, "{{ font.designer | default('kkotdari') }}")
+    SetTTFName(0x409, 10, "{{ font.description | default('A monospace font for multilingual programming') }}")
+    {% if font.vendor_url is defined %}
+    SetTTFName(0x409, 11, "{{ font.vendor_url }}")
+    {% endif %}
+    {% if font.license is defined %}
+    SetTTFName(0x409, 13, "{{ font.license }}")
+    {% endif %}
+    {% if font.license_url is defined %}
+    SetTTFName(0x409, 14, "{{ font.license_url }}")
+    {% endif %}
+
+    SetOS2Value("Weight", weights[i])
+    SetOS2Value("WinAscent", win_ascent)
+    SetOS2Value("WinDescent", win_descent)
+    SetOS2Value("TypoAscent", em_ascent)
+    SetOS2Value("TypoDescent", -em_descent)
+
+    Print("PHASE:Removing kerning and ligatures")
+    SelectAll()
+    RemoveAllKerns()
+
+    lookups = GetLookups("GSUB")
+    if (SizeOf(lookups) > 0)
+        k = SizeOf(lookups) - 1
+        while (k >= 0)
+            RemoveLookup(lookups[k])
+            k = k - 1
+        endloop
+        Print("Removed " + ToString(SizeOf(lookups)) + " GSUB lookups")
+    endif
+
+    lookups = GetLookups("GPOS")
+    if (SizeOf(lookups) > 0)
+        k = SizeOf(lookups) - 1
+        while (k >= 0)
+            RemoveLookup(lookups[k])
+            k = k - 1
+        endloop
+        Print("Removed " + ToString(SizeOf(lookups)) + " GPOS lookups")
+    endif
+
+    Print("PHASE:Generating font")
+    output_file = "{{ output_dir }}/" + fontfamily_short + "-" + file_names[i] + ".ttf"
+
+    SelectWorthOutputting()
+
+    final_count = 0
+    foreach
+        final_count = final_count + 1
+    endloop
+    Print("Final glyph count: " + ToString(final_count))
+
+    if (final_count > 0)
+        Generate(output_file, "", 0x8020068)
+        Print("GENERATED:" + output_file)
+    else
+        Print("ERROR: No glyphs to generate!")
+    endif
+
+    Close()
+    Print("STYLE_END:" + styles[i])
+
+    j = j + 1
+endloop
+
+Print("FONTFORGE_END")
+Quit(0)

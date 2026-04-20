@@ -1,0 +1,28 @@
+# Profile registry
+# Defines default config files and available profile overrides.
+# Config type directories are defined in configs/paths.yaml:
+#   font    → src/configs/font/
+#   build   → src/configs/build/
+#   logging → src/configs/logging/
+
+configs:
+  font:    "mono.yaml"
+  build:   "mono.yaml"
+  logging: "logging.yaml"
+
+profiles:
+  mono:
+    font:  "mono.yaml"
+    build: "mono.yaml"
+
+  mono-c:
+    font:  "mono-c.yaml"
+    build: "mono-c.yaml"
+
+  absolute-mono:
+    font:  "absolute-mono.yaml"
+    build: "absolute-mono.yaml"
+
+  absolute-mono-c:
+    font:  "absolute-mono-c.yaml"
+    build: "absolute-mono-c.yaml"

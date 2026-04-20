@@ -1,0 +1,12 @@
+font:
+  family:       "Goru Mono"
+  family_short: "GoruMono"
+  version:      "1.0.0"
+  copyright:    "Copyright (c) 2026, kkotdari"
+  manufacturer: "kkotdari"
+  designer:     "Apple Inc. Renzhi Li"
+  description:  "A customizable monospace font system for perfect alignment across multiple languages. Optimized for programming with mixed Latin, Korean, and Japanese text."
+  license:      "This Font Software is licensed under the SIL Open Font License, Version 1.1. Based on Meslo LG (Apache License 2.0) and Sarasa Gothic (SIL OFL 1.1)."
+  license_url:  "http://scripts.sil.org/OFL"
+  vendor_url:   "https://github.com/kkotdari/goru-font"
+  unique_id:    "kkotdari: Goru Mono: 2026"

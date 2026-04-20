@@ -1,0 +1,15 @@
+# Logging Configuration
+
+logging:
+  console_level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file_level: "DEBUG"
+  log_to_file: true
+  log_dir: "logs"
+  progress_interval: 1
+  use_rich: true
+  use_colors: true
+  colors_256:
+    red: 210     # Soft red
+    green: 114   # Soft green
+    blue: 111    # Sky blue
+    gray: 252    # Light gray
